@@ -1,3 +1,7 @@
+function test(){
+  const test = wostoolcommon.getPubmedData('36415024, 36546715, 36484305, 36708079, 36213991, 36328588, 35095078, 34806607, 36575000, 35908952');
+  const test1 = 0;
+}
 function issue57(){
   const inputFiles = driveCommon.getFilesArrayByFolderId(ScriptProperties.getProperty('inputFolderId'));  
   if (!inputFiles){
@@ -12,6 +16,8 @@ function issue57(){
   const pmidIdx = 0;
   const depIdx = 1;
   const dpIdx = 2;
+  const phstYearIdx = 3;
+  const phstMonthIdx = 4;
   const monthIdx = 1;
   const shortMonths = wostoolcommon.getShortMonthName();
   inputFiles.forEach((file, idx) => {
@@ -40,6 +46,7 @@ function issue57(){
       [
         ['noPmidCheck', true],
         ['noOutputFile', true],
+        ['noPHSTPubmed', true],
       ],
     );
     const pubmedData = wostoolcommon.getPubmedData(uniquePmidList, getPubmedFlag);
@@ -66,21 +73,21 @@ function issue57Summary(){
   const latestFileId = driveCommon.getLastUpdated(outputFolder, false);
   const targetSs = SpreadsheetApp.openById(latestFileId);
   const summarySheetName = 'summary';
-  if (targetSs.getSheetByName(summarySheetName)){
-    return;
-  }
-  const summarySheet = targetSs.insertSheet();
+  const summarySheet = targetSs.getSheetByName(summarySheetName) ? targetSs.getSheetByName(summarySheetName): targetSs.insertSheet();
+  summarySheet.clearContents();
   summarySheet.setName(summarySheetName);
   targetSs.moveActiveSheet(1);
-  const checkIdx = 4;
+  const wosIdIdx = 0;
+  const pmidIdx = 1;
+  const checkIdx = 6;
   const checkSheetList = targetSs.getSheets().map(sheet => {
     if (sheet.getName() === summarySheetName){
       return;
     }
-    const values = sheet.getDataRange().getValues().filter(x => !x[checkIdx]).map(x => [sheet.getName(), ...x]);
+    const values = sheet.getDataRange().getValues().filter(x => !x[checkIdx]).map(x => [sheet.getName(), ...x, `https://pubmed.ncbi.nlm.nih.gov/${x[pmidIdx]}/`, `https://www.webofscience.com/wos/woscc/full-record/WOS:000${x[wosIdIdx]}`]);
     return values.length > 0 ? values : null;
   }).filter(x => x).flat();
-  const outputHeader = ['fileName', ...targetSs.getSheets()[1].getRange(1, 1, 1, targetSs.getSheets()[1].getLastColumn()).getValues()[0]];
+  const outputHeader = ['fileName', ...targetSs.getSheets()[1].getRange(1, 1, 1, targetSs.getSheets()[1].getLastColumn()).getValues()[0], 'PubMedURL', 'WOS_URL'];
   const outputData = [outputHeader, ...checkSheetList];
   summarySheet.getRange(1, 1, outputData.length, outputData[0].length).setValues(outputData);
 }
